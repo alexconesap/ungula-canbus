@@ -73,8 +73,7 @@ ESP32 TWAI driver is covered by `lib_hal/tests` and on-target loopback.
 
 ## Dependencies
 
-- **UngulaHal** (`lib_hal`) — the `ICan` interface + concrete CAN
-  controller classes. Required.
+- [UngulaHal](https://github.com/alexconesap/ungula-hal) defines the \`ICan\` interface + concrete CAN controller classes. Required.
 
 ## Acknowledgements
 
