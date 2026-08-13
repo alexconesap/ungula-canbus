@@ -12,24 +12,20 @@ explicitly nested further. Per-brand protocols live in
 
 The version is `0.x` on purpose. The shape of the API — free functions
 over an `ICan &`, per-brand namespaces, protocol constants in
-`<brand>/protocol.h` — is settled and unlikely to move. These parts are
-not:
+`<brand>/protocol.h` — is settled. These parts are not, so pin the
+version if you depend on them:
 
-- **Error reporting.** Every operation returns a bare `bool`. There is no
-  way to tell "no reply" from "driver error" from "wrong frame". A status
-  enum in the shape of the other Ungula libraries is the obvious next
-  step, and it changes every signature that currently returns `bool`.
+- **Error reporting.** Every operation returns a bare `bool`; "no reply",
+  "driver error" and "wrong frame" are indistinguishable. Moving to a
+  status enum changes every signature that returns `bool` today.
 - **Timeouts.** The 20 ms TX timeout and the 50 / 100 / 10 ms reply
   timeouts are hardcoded at each call site and cannot be overridden.
-  Expect them to become parameters or a config struct.
-- **The speed cache.** File-scope, single-bus, invalidated by hand. If it
-  becomes per-bus state it turns into an object and the free-function
-  signatures change with it.
+- **The speed cache.** File-scope, single-bus, invalidated by hand. Making
+  it per-bus state turns it into an object and changes the free-function
+  signatures with it.
 - **Frame validation.** `dlc`, `extendedId` and `remote` are not checked
-  on received frames. Tightening that will change which frames are
-  accepted, i.e. observable behaviour.
-
-Pin the version if you depend on any of the above.
+  on received frames. Tightening that changes which frames are accepted,
+  i.e. observable behaviour.
 
 ## Headers you include
 
@@ -293,12 +289,8 @@ Things this cache implies:
   `invalidateSpeedCache()` yourself. Same after a motor power-cycle or a
   bus-off recovery, which the library cannot observe.
 
-## Future hardware (placeholders, not implemented yet)
+## Future hardware (not implemented yet)
 
-- `ungula::hal::can::Mcp2515Can` — classic CAN 2.0 via SPI MCP2515.
-  Same `ICan` interface; drop-in for `Can`.
-- `ungula::hal::can::ICanFd` + `ungula::hal::can::CanFd` — CAN-FD
-  controller. Separate interface (different frame shape).
-
-Until those land, UngulaCanbus is classic-CAN-only and the only
-concrete bus is `lib_hal::can::Can`.
+`Mcp2515Can` (MCP2515 over SPI, drop-in for `Can` on the same `ICan`) and
+`ICanFd` / `CanFd` (CAN-FD, separate interface) do not exist yet. Today the
+library is classic-CAN-only and `ungula::hal::can::Can` is the one bus class.
