@@ -1,4 +1,4 @@
-# UngulaCanbus (`lib_canbus`) 0.1.0
+# UngulaCanbus (`lib_canbus`) 0.1.1
 
 CAN-bus service layer + per-brand wire protocols for embedded C++17.
 Sits on top of `lib_hal`'s classic-CAN abstraction (`ICan` /
@@ -11,9 +11,12 @@ specifics.
 
 Generic bus services (protocol-agnostic):
 
-- Templated node discovery (`bus_helpers::scanNodes`).
-- RX queue drain.
-- Send-and-await-matching-reply pattern.
+- Templated node discovery (`ungula::canbus::scanNodes`).
+- RX queue drain (`ungula::canbus::drainRx`).
+- Send-and-await-matching-reply (`ungula::canbus::sendAndAwaitReply`).
+
+All three live in `ungula/canbus/bus_helpers.h`. There is no
+`bus_helpers` namespace — the file name is not a scope.
 
 Per-brand device protocols under `devices/<brand>/`:
 
@@ -59,6 +62,24 @@ ungula::canbus::rmd::sendSpeed(bus, /*motor_id=*/1, 3000);
 Host code passes `bus` directly — `Can` is an `ICan` by inheritance,
 no adapter object needed.
 
+## Before you wire this into a control loop
+
+Read the caveats in `API.md` — the short version:
+
+- Everything is **blocking, task-context only**. No ISR use.
+- Reads take the *first* frame that arrives and check only the id and
+  command byte. On a bus with other talkers they fail intermittently, and a
+  late reply from a timed-out request can be picked up by the next one.
+- `dlc`, `extendedId` and `remote` are not validated on received frames.
+- Nothing here watches for bus-off. `isBusOff()` / `recoverFromBusOff()`
+  are on `ICan` but the host has to poll and recover.
+- `drainRx()` has no iteration cap — only call it on a quiet bus.
+- `sendSpeedIfChanged()` caches per motor id in file-scope state shared by
+  every bus in the process, and is not task-safe.
+
+The API is `0.x`; error reporting and the timeout handling are the parts
+most likely to change.
+
 ## Testing
 
 ```shell
@@ -73,7 +94,7 @@ ESP32 TWAI driver is covered by `lib_hal/tests` and on-target loopback.
 
 ## Dependencies
 
-- [UngulaHal](https://github.com/alexconesap/ungula-hal) defines the \`ICan\` interface + concrete CAN controller classes. Required.
+- [UngulaHal](https://github.com/alexconesap/ungula-hal) defines the `ICan` interface + concrete CAN controller classes. Required.
 
 ## Acknowledgements
 
@@ -81,7 +102,7 @@ Thanks to Claude and ChatGPT for helping on generating this documentation.
 
 ## License
 
-MIT License — see [LICENSE](license.txt) file.
+MIT License — see [LICENSE](LICENSE) file.
 
 ---
 
